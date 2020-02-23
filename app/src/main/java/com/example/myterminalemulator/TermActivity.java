@@ -3,6 +3,7 @@ package com.example.myterminalemulator;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.text.TextUtils;
 import com.example.myterminalemulator.compat.ActionBarCompat;
@@ -15,6 +16,7 @@ import com.example.myterminalemulator.emulatorview.UpdateCallback;
 import com.example.myterminalemulator.emulatorview.compat.ClipboardManagerCompat;
 import com.example.myterminalemulator.emulatorview.compat.ClipboardManagerCompatFactory;
 import com.example.myterminalemulator.emulatorview.compat.KeycodeConstants;
+import com.example.myterminalemulator.shortcuts.AddShortcut;
 import com.example.myterminalemulator.util.SessionList;
 import com.example.myterminalemulator.util.TermSettings;
 
@@ -64,6 +66,7 @@ import android.widget.Toast;
 
 public class TermActivity extends AppCompatActivity implements UpdateCallback, SharedPreferences.OnSharedPreferenceChangeListener {
 
+    private static String TAG = "TermActivity";
     /**
      * The ViewFlipper which holds the collection of EmulatorView widgets.
      */
@@ -72,7 +75,7 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
     /**
      * The name of the ViewFlipper in the resources.
      */
-    private static final int VIEW_FLIPPER = R.id.view_flipper;
+    // private static final int VIEW_FLIPPER = R.id.view_flipper;
 
     private SessionList mTermSessions;
 
@@ -103,25 +106,28 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
 
     private static final String ACTION_PATH_BROADCAST = "jackpal.androidterm.broadcast.APPEND_TO_PATH";
     private static final String ACTION_PATH_PREPEND_BROADCAST = "jackpal.androidterm.broadcast.PREPEND_TO_PATH";
-    private static final String PERMISSION_PATH_BROADCAST = "jackpal.androidterm.permission.APPEND_TO_PATH";
-    private static final String PERMISSION_PATH_PREPEND_BROADCAST = "jackpal.androidterm.permission.PREPEND_TO_PATH";
+    private static final String PERMISSION_PATH_BROADCAST = "jackpal.androidterm.permission.APPEND_TO_PATH_LI";
+    private static final String PERMISSION_PATH_PREPEND_BROADCAST = "jackpal.androidterm.permission.PREPEND_TO_PATH_LI";
     private int mPendingPathBroadcasts = 0;
-    private BroadcastReceiver mPathReceiver = new BroadcastReceiver() {
+/*    private BroadcastReceiver mPathReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             String path = makePathFromBundle(getResultExtras(false));
+            Log.d(TAG, "111111111111111" + path);
+            Log.d(TAG, "111111111111222" +intent.getAction());
             if (intent.getAction().equals(ACTION_PATH_PREPEND_BROADCAST)) {
                 mSettings.setPrependPath(path);
             } else {
                 mSettings.setAppendPath(path);
             }
+            Log.d(TAG, "111111111111333" + Integer.toString(mPendingPathBroadcasts));
             mPendingPathBroadcasts--;
-
+            Log.d(TAG, "111111111111444" + Integer.toString(mPendingPathBroadcasts));
             if (mPendingPathBroadcasts <= 0 && mTermService != null) {
                 populateViewFlipper();
                 populateWindowList();
             }
         }
-    };
+    };*/
     // Available on API 12 and later
     private static final int FLAG_INCLUDE_STOPPED_PACKAGES = 0x20;
 
@@ -131,6 +137,7 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
             Log.i(TermDebug.LOG_TAG, "Bound to TermService");
             TermService.TSBinder binder = (TermService.TSBinder) service;
             mTermService = binder.getService();
+            Log.d("lixiangfeng", "mTSConnection: "+ Integer.toString(mPendingPathBroadcasts));
             if (mPendingPathBroadcasts <= 0) {
                 populateViewFlipper();
                 populateWindowList();
@@ -253,6 +260,8 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
      */
     private View.OnKeyListener mKeyListener = new View.OnKeyListener() {
         public boolean onKey(View v, int keyCode, KeyEvent event) {
+            boolean bl = backkeyInterceptor(keyCode, event) || keyboardShortcuts(keyCode, event);
+            Log.d(TAG, "lixiangfeng onKey: " + bl);
             return backkeyInterceptor(keyCode, event) || keyboardShortcuts(keyCode, event);
         }
 
@@ -294,12 +303,18 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
          * Make sure the back button always leaves the application.
          */
         private boolean backkeyInterceptor(int keyCode, KeyEvent event) {
+            Log.d(TAG,"lixiangfeng keyCode: " + keyCode);
+            Log.d(TAG,"lixiangfeng mActionBarMode: " + mActionBarMode);
+            Log.d(TAG,"lixiangfeng mActionBar: " + (mActionBar!= null));
+            //Log.d(TAG,"lixiangfeng mActionBar: " + (mActionBar.isShowing()));
             if (keyCode == KeyEvent.KEYCODE_BACK && mActionBarMode == TermSettings.ACTION_BAR_MODE_HIDES && mActionBar != null && mActionBar.isShowing()) {
                 /* We need to intercept the key event before the view sees it,
                    otherwise the view will handle it before we get it */
                 onKeyUp(keyCode, event);
+                Log.d(TAG, "lixiangfeng backkeyInterceptor: true");
                 return true;
             } else {
+                Log.d(TAG, "lixiangfeng backkeyInterceptor: false");
                 return false;
             }
         }
@@ -313,32 +328,36 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
         super.onCreate(icicle);
 
         Log.v(TermDebug.LOG_TAG, "onCreate");
+        //ComponentName：可以启动其他应用的Activity、Service.
+        //mPrivateAlias = new ComponentName(this, RemoteInterface.PRIVACT_ACTIVITY_ALIAS);
 
-        mPrivateAlias = new ComponentName(this, RemoteInterface.PRIVACT_ACTIVITY_ALIAS);
-
-        if (icicle == null)
-            onNewIntent(getIntent());
+/*        if (icicle == null)
+            onNewIntent(getIntent());*/
 
         final SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mSettings = new TermSettings(getResources(), mPrefs);
         mPrefs.registerOnSharedPreferenceChangeListener(this);
 
+        /*
         Intent broadcast = new Intent(ACTION_PATH_BROADCAST);
-/*        if (AndroidCompat.SDK >= 12) {
+        if (AndroidCompat.SDK >= 12) {
             broadcast.addFlags(FLAG_INCLUDE_STOPPED_PACKAGES);
-        }*/
+        }
         mPendingPathBroadcasts++;
+        Log.d(TAG, "sendOrderedBroadcast111 " + Integer.toString(mPendingPathBroadcasts));
         sendOrderedBroadcast(broadcast, PERMISSION_PATH_BROADCAST, mPathReceiver, null, RESULT_OK, null, null);
 
         broadcast = new Intent(broadcast);
         broadcast.setAction(ACTION_PATH_PREPEND_BROADCAST);
         mPendingPathBroadcasts++;
+        Log.d(TAG, "sendOrderedBroadcast222 " + Integer.toString(mPendingPathBroadcasts));
         sendOrderedBroadcast(broadcast, PERMISSION_PATH_PREPEND_BROADCAST, mPathReceiver, null, RESULT_OK, null, null);
-
+        */
         TSIntent = new Intent(this, TermService.class);
-        startService(TSIntent);
+        //startService(TSIntent);
+        Log.d("lixiangfeng", "startService TermService");
 
-        if (AndroidCompat.SDK >= 11) {
+/*        if (AndroidCompat.SDK >= 11) {
             int actionBarMode = mSettings.actionBarMode();
             mActionBarMode = actionBarMode;
             if (AndroidCompat.V11ToV20) {
@@ -353,11 +372,12 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
             }
         } else {
             mActionBarMode = TermSettings.ACTION_BAR_MODE_ALWAYS_VISIBLE;
-        }
+        }*/
 
         setContentView(R.layout.activity_main);
-        mViewFlipper = (TermViewFlipper) findViewById(VIEW_FLIPPER);
+        mViewFlipper = (TermViewFlipper) findViewById(R.id.view_flipper);
 
+        /*
         PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
         mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TermDebug.LOG_TAG);
         WifiManager wm = (WifiManager)getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -366,8 +386,9 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
             wifiLockMode = WIFI_MODE_FULL_HIGH_PERF;
         }
         mWifiLock = wm.createWifiLock(wifiLockMode, TermDebug.LOG_TAG);
+         */
 
-        ActionBarCompat actionBar = ActivityCompat.getActionBar(this);
+/*        ActionBarCompat actionBar = ActivityCompat.getActionBar(this);
         if (actionBar != null) {
             mActionBar = actionBar;
             actionBar.setNavigationMode(ActionBarCompat.NAVIGATION_MODE_LIST);
@@ -375,7 +396,7 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
             if (mActionBarMode == TermSettings.ACTION_BAR_MODE_HIDES) {
                 actionBar.hide();
             }
-        }
+        }*/
 
         mHaveFullHwKeyboard = checkHaveFullHwKeyboard(getResources().getConfiguration());
 
@@ -387,7 +408,7 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
         if (extras == null || extras.size() == 0) {
             return "";
         }
-
+        // 变量/参数下面出现下划线，是指该变量为Reassigned parameter，即该变量被多次赋值。
         String[] keys = new String[extras.size()];
         keys = extras.keySet().toArray(keys);
         Collator collator = Collator.getInstance(Locale.US);
@@ -415,6 +436,7 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
     }
 
     private void populateViewFlipper() {
+        Log.d("lixiangfeng", "populateViewFlipper");
         if (mTermService != null) {
             mTermSessions = mTermService.getSessions();
 
@@ -427,7 +449,6 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
                     return;
                 }
             }
-
             mTermSessions.addCallback(this);
 
             for (TermSession session : mTermSessions) {
@@ -437,15 +458,16 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
 
             updatePrefs();
 
-            if (onResumeSelectWindow >= 0) {
+            /*if (onResumeSelectWindow >= 0) {
                 mViewFlipper.setDisplayedChild(onResumeSelectWindow);
                 onResumeSelectWindow = -1;
-            }
+            }*/
             mViewFlipper.onResume();
         }
     }
 
     private void populateWindowList() {
+        Log.d("lixiangfeng", "populateWindowList");
         if (mActionBar == null) {
             // Not needed
             return;
@@ -477,12 +499,14 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
         }
         mTermService = null;
         mTSConnection = null;
+        /*
         if (mWakeLock.isHeld()) {
             mWakeLock.release();
         }
         if (mWifiLock.isHeld()) {
             mWifiLock.release();
         }
+         */
     }
 
     private void restart() {
@@ -549,9 +573,17 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
             }
         }
 
-        {
+       /* {
             Window win = getWindow();
             WindowManager.LayoutParams params = win.getAttributes();
+            Log.d(TAG, "WindowManager.LayoutParams params.height" + params.height);
+            Log.d(TAG, "WindowManager.LayoutParams params.width" + params.width);
+            Log.d(TAG, "WindowManager.LayoutParams params.packageName" + params.packageName);
+            Log.d(TAG, "WindowManager.LayoutParams params.x" + params.x);
+            Log.d(TAG, "WindowManager.LayoutParams params.y" + params.y);
+            Log.d(TAG, "WindowManager.LayoutParams params.horizontalMargin" + params.horizontalMargin);
+            Log.d(TAG, "WindowManager.LayoutParams params.horizontalWeight" + params.horizontalWeight);
+
             final int FULLSCREEN = WindowManager.LayoutParams.FLAG_FULLSCREEN;
             int desiredFlag = mSettings.showStatusBar() ? 0 : FULLSCREEN;
             if (desiredFlag != (params.flags & FULLSCREEN) || (AndroidCompat.SDK >= 11 && mActionBarMode != mSettings.actionBarMode())) {
@@ -579,15 +611,16 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
         } else if (orientation == 2) {
             o = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
         } else {
-            /* Shouldn't be happened. */
+             *//*Shouldn't be happened.*//*
         }
-        setRequestedOrientation(o);
+        setRequestedOrientation(o);*/
     }
 
     @Override
     public void onPause() {
         super.onPause();
 
+        Log.d("lixiangfeng onPause", "onPause");
         if (AndroidCompat.SDK < 5) {
             /* If we lose focus between a back key down and a back key up,
                we shouldn't respond to the next back key up event unless
@@ -604,6 +637,7 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
             public void run() {
                 InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(token, 0);
+                Log.d("InputMethodManager", "InputMethodManager");
             }
         }.start();
     }
@@ -639,12 +673,15 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
 
         mHaveFullHwKeyboard = checkHaveFullHwKeyboard(newConfig);
 
+        Log.d("lixiangfeng", "onConfigurationChanged");
         EmulatorView v = (EmulatorView) mViewFlipper.getCurrentView();
         if (v != null) {
             v.updateSize(false);
+            Log.d("lixiangfeng", "emulatorView != null");
         }
 
         if (mWinListAdapter != null) {
+            Log.d("lixiangfeng", "mWinListAdapter");
             // Force Android to redraw the label in the navigation dropdown
             mWinListAdapter.notifyDataSetChanged();
         }
@@ -653,8 +690,9 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
-        MenuItemCompat.setShowAsAction(menu.findItem(R.id.menu_new_window), MenuItemCompat.SHOW_AS_ACTION_ALWAYS);
-        MenuItemCompat.setShowAsAction(menu.findItem(R.id.menu_close_window), MenuItemCompat.SHOW_AS_ACTION_IF_ROOM);
+        //MenuItemCompat.setShowAsAction(menu.findItem(R.id.menu_new_window), MenuItemCompat.SHOW_AS_ACTION_ALWAYS);
+        //MenuItemCompat.setShowAsAction(menu.findItem(R.id.menu_close_window), MenuItemCompat.SHOW_AS_ACTION_IF_ROOM);
+        //MenuItemCompat.setShowAsAction(menu.findItem(R.id.menu_preferences), MenuItemCompat.SHOW_AS_ACTION_ALWAYS);
         return true;
     }
 
@@ -688,10 +726,12 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
             Intent openHelp = new Intent(Intent.ACTION_VIEW,
                     Uri.parse(getString(R.string.help_url)));
             startActivity(openHelp);
+        } else if (id == R.id.add_shortcut) {
+            doAddShortcut();
         }
         // Hide the action bar if appropriate
         if (mActionBarMode == TermSettings.ACTION_BAR_MODE_HIDES) {
-            mActionBar.hide();
+            //mActionBar.hide();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -756,6 +796,7 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
 
     @Override
     protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
         switch (request) {
             case REQUEST_CHOOSE_WINDOW:
                 if (result == RESULT_OK && data != null) {
@@ -779,6 +820,7 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
         }
     }
 
+    /*
     @Override
     protected void onNewIntent(Intent intent) {
         if ((intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0) {
@@ -804,8 +846,9 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
                 }
                 break;
         }
-    }
+    }*/
 
+    /*
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem wakeLockItem = menu.findItem(R.id.menu_toggle_wakelock);
@@ -822,6 +865,7 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
         }
         return super.onPrepareOptionsMenu(menu);
     }
+     */
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v,
@@ -1068,6 +1112,14 @@ public class TermActivity extends AppCompatActivity implements UpdateCallback, S
             mWifiLock.acquire();
         }
         ActivityCompat.invalidateOptionsMenu(this);
+    }
+
+    // 开启添加快捷命令对话框
+    private void doAddShortcut() {
+        Intent intent = new Intent();
+        intent.setClass(this,AddShortcut.class);
+        intent.setAction("android.intent.action.CREATE_SHORTCUT");
+        startActivity(intent);
     }
 
     private void doToggleActionBar() {

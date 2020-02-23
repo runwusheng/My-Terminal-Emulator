@@ -42,4 +42,6 @@
         android:title="@string/enable_wifilock" />
     <item android:id="@+id/action_help"
         android:title="@string/help" />
+    <item android:id="@+id/add_shortcut"
+        android:title="AddShortcut"/>
 </menu>

@@ -120,6 +120,8 @@ public class ShellTermSession extends GenericTermSession {
     public void initializeEmulator(int columns, int rows) {
         super.initializeEmulator(columns, rows);
 
+        Log.d("ShellTermSession", "initializeEmulator columns: " + columns + "  rows: " + rows);
+        // columns: 320  rows: 77
         mWatcherThread.start();
         sendInitialCommand(mInitialCommand);
     }

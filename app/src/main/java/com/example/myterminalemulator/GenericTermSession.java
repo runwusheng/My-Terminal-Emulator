@@ -20,6 +20,7 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
+import android.nfc.Tag;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
@@ -39,6 +40,8 @@ import com.example.myterminalemulator.util.TermSettings;
  * and the I/O streams used to talk to the process.
  */
 class GenericTermSession extends TermSession {
+    private static final String TAG = "GenericTermSession";
+    private boolean isPrintLog = true;
     //** Set to true to force into 80 x 24 for testing with vttest. */
     private static final boolean VTTEST_MODE = false;
 
@@ -76,8 +79,13 @@ class GenericTermSession extends TermSession {
 
     public void updatePrefs(TermSettings settings) {
         mSettings = settings;
+        if (isPrintLog) {
+            Log.d(TAG, "updatePrefs settings.getFontSize: " + settings.getFontSize());
+            Log.d(TAG, "updatePrefs mSettings.getFontSize: " + mSettings.getFontSize());
+        }
         setColorScheme(new ColorScheme(settings.getColorScheme()));
         setDefaultUTF8Mode(settings.defaultToUTF8Mode());
+        Log.d(TAG, "settings.defaultToUTF8Mode: " + settings.defaultToUTF8Mode());
     }
 
     @Override
@@ -86,6 +94,7 @@ class GenericTermSession extends TermSession {
             columns = 80;
             rows = 24;
         }
+        Log.d(TAG, "initializeEmulator columns: " + columns + "rows" + rows);
         super.initializeEmulator(columns, rows);
 
         setPtyUTF8Mode(getUTF8Mode());

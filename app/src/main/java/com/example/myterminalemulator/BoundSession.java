@@ -2,6 +2,8 @@ package com.example.myterminalemulator;
 
 import android.os.ParcelFileDescriptor;
 import android.text.TextUtils;
+import android.util.Log;
+
 import com.example.myterminalemulator.util.TermSettings;
 
 class BoundSession extends GenericTermSession {
@@ -13,6 +15,8 @@ class BoundSession extends GenericTermSession {
         super(ptmxFd, settings, true);
 
         this.issuerTitle = issuerTitle;
+
+        Log.d("BoundSession", "issuerTitle: " + issuerTitle);
 
         setTermIn(new ParcelFileDescriptor.AutoCloseInputStream(ptmxFd));
         setTermOut(new ParcelFileDescriptor.AutoCloseOutputStream(ptmxFd));
@@ -31,6 +35,7 @@ class BoundSession extends GenericTermSession {
     public void initializeEmulator(int columns, int rows) {
         super.initializeEmulator(columns, rows);
 
+        Log.d("BoundSession", "initializeEmulator columns: " + columns + "   rows: " + rows);
         fullyInitialized = true;
     }
 

@@ -65,9 +65,9 @@ public class TermService extends Service implements TermSession.FinishCallback
     }
 
     /* This should be @Override if building with API Level >=5 */
-/*    public int onStartCommand(Intent intent, int flags, int startId) {
+    public int onStartCommand(Intent intent, int flags, int startId) {
         return COMPAT_START_STICKY;
-    }*/
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -86,9 +86,12 @@ public class TermService extends Service implements TermSession.FinishCallback
     public void onCreate() {
         // should really belong to the Application class, but we don't use one...
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        Log.d("TermService", "prefs: " + prefs);
         SharedPreferences.Editor editor = prefs.edit();
-        String defValue = getDir("HOME", MODE_PRIVATE).getAbsolutePath();
+        String defValue = getDir("HOME", MODE_PRIVATE).getAbsolutePath(); // /data/user/0/com.example.myterminalemulator/app_HOME
+        Log.d("TermService", "defValue: " + defValue);
         String homePath = prefs.getString("home_path", defValue);
+        Log.d("TermService", "homePath: " + homePath);
         editor.putString("home_path", homePath);
         editor.commit();
 
@@ -96,21 +99,22 @@ public class TermService extends Service implements TermSession.FinishCallback
         mTermSessions = new SessionList();
 
         /* Put the service in the foreground. */
+        /* //常住通知栏的通知
         Notification notification = new Notification(R.drawable.ic_stat_service_notification_icon, getText(R.string.service_notify_text), System.currentTimeMillis());
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
         Intent notifyIntent = new Intent(this, TermActivity.class);
         notifyIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notifyIntent, 0);
-        //notification.setLatestEventInfo(this, getText(R.string.application_terminal), getText(R.string.service_notify_text), pendingIntent);
+        notification.setLatestEventInfo(this, getText(R.string.application_terminal), getText(R.string.service_notify_text), pendingIntent);
         compat.startForeground(RUNNING_NOTIFICATION, notification);
-
+        */
         Log.d(TermDebug.LOG_TAG, "TermService started");
         return;
     }
 
     @Override
     public void onDestroy() {
-        compat.stopForeground(true);
+        // compat.stopForeground(true); // 2020年2月10日09:50:27
         for (TermSession session : mTermSessions) {
             /* Don't automatically remove from list of sessions -- we clear the
              * list below anyway and we could trigger
@@ -135,6 +139,7 @@ public class TermService extends Service implements TermSession.FinishCallback
         public IntentSender startSession(final ParcelFileDescriptor pseudoTerminalMultiplexerFd,
                                          final ResultReceiver callback) {
             final String sessionHandle = UUID.randomUUID().toString();
+            Log.d("TermService", "sessionHandle: " + sessionHandle);
 
             // distinct Intent Uri and PendingIntent requestCode must be sufficient to avoid collisions
             final Intent switchIntent = new Intent(RemoteInterface.PRIVACT_OPEN_NEW_WINDOW)
@@ -152,6 +157,7 @@ public class TermService extends Service implements TermSession.FinishCallback
                 return null;
 
             for (String packageName:pkgs) {
+                Log.d("TermService", "packageName: " + packageName);
                 try {
                     final PackageInfo pkgInfo = pm.getPackageInfo(packageName, 0);
 
@@ -163,10 +169,12 @@ public class TermService extends Service implements TermSession.FinishCallback
 
                     if (!TextUtils.isEmpty(label)) {
                         final String niceName = label.toString();
+                        Log.d("TermService", "niceName: " + niceName);
 
                         new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
+                                Log.d("TermService", "qqqqqqqqqqqqqqqqqqqqqqqq " );
                                 GenericTermSession session = null;
                                 try {
                                     final TermSettings settings = new TermSettings(getResources(),
@@ -180,7 +188,9 @@ public class TermService extends Service implements TermSession.FinishCallback
                                     session.setFinishCallback(new RBinderCleanupCallback(result, callback));
                                     session.setTitle("");
 
-                                    session.initializeEmulator(80, 24);
+                                    Log.d("TermService", "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww");
+
+                                    // session.initializeEmulator(80, 24);
                                 } catch (Exception whatWentWrong) {
                                     Log.e("TermService", "Failed to bootstrap AIDL session: "
                                             + whatWentWrong.getMessage());

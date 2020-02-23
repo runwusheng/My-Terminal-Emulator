@@ -24,6 +24,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
@@ -98,6 +99,7 @@ public class TermViewFlipper extends ViewFlipper implements Iterable<View> {
         Rect visible = mVisibleRect;
         mChildParams = new LayoutParams(visible.width(), visible.height(),
             Gravity.TOP|Gravity.LEFT);
+        Log.d("TermViewFlipper", "visible.width(): " + visible.width() + " visible.height(): " + visible.height());
     }
 
     public void updatePrefs(TermSettings settings) {
@@ -269,8 +271,12 @@ public class TermViewFlipper extends ViewFlipper implements Iterable<View> {
             mCurHeight = height;
 
             LayoutParams params = mChildParams;
+            Log.d("1111111111111", "layoutParams.width " + params.width + " layoutParams.height " + params.height);
             params.width = width;
             params.height = height;
+            Log.d("1111111111111", "width " + width + " height " + height);
+            Log.d("1111111111111", "layoutParams.width " + params.width + " layoutParams.height " + params.height);
+            Log.d("1111111111111", "mChildParams.width " + mChildParams.width + " mChildParams.height " + mChildParams.height);
             for (View v : this) {
                 updateViewLayout(v, params);
             }

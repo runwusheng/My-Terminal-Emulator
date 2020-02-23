@@ -29,6 +29,7 @@ import java.nio.charset.CodingErrorAction;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 
 /**
  * A terminal session, consisting of a VT100 terminal emulator and its
@@ -241,6 +242,7 @@ public class TermSession {
      * @param rows The number of rows in the terminal window.
      */
     public void initializeEmulator(int columns, int rows) {
+        Log.d("TermSession", "initializeEmulator columns: " + columns + "rows" + rows);
         mTranscriptScreen = new TranscriptScreen(columns, TRANSCRIPT_ROWS, rows, mColorScheme);
         mEmulator = new TerminalEmulator(this, mTranscriptScreen, columns, rows, mColorScheme);
         mEmulator.setDefaultUTF8Mode(mDefaultUTF8Mode);
@@ -464,8 +466,10 @@ public class TermSession {
      */
     public void updateSize(int columns, int rows) {
         if (mEmulator == null) {
+            Log.d("TermSession", "updateSize mEmulator == null columns: " + columns + "   rows: " + rows);
             initializeEmulator(columns, rows);
         } else {
+            Log.d("TermSession", "updateSize mEmulator.updateSize columns: " + columns + "   rows: " + rows);
             mEmulator.updateSize(columns, rows);
         }
     }

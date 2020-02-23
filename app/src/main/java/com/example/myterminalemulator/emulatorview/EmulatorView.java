@@ -66,7 +66,7 @@ import android.widget.Scroller;
 public class EmulatorView extends View implements GestureDetector.OnGestureListener {
     private final static String TAG = "EmulatorView";
     private final static boolean LOG_KEY_EVENTS = false;
-    private final static boolean LOG_IME = false;
+    private final static boolean LOG_IME = true;
 
     /**
      * We defer some initialization until we have been layed out in the view
@@ -1468,12 +1468,14 @@ public class EmulatorView extends View implements GestureDetector.OnGestureListe
     }
 
     private void updateSize(int w, int h) {
+        Log.d(TAG,"updateSize w: " + w + " h: " + h);
         mColumns = Math.max(1, (int) (((float) w) / mCharacterWidth));
         mVisibleColumns = Math.max(1, (int) (((float) mVisibleWidth) / mCharacterWidth));
 
         mTopOfScreenMargin = mTextRenderer.getTopMargin();
         mRows = Math.max(1, (h - mTopOfScreenMargin) / mCharacterHeight);
         mVisibleRows = Math.max(1, (mVisibleHeight - mTopOfScreenMargin) / mCharacterHeight);
+        Log.d(TAG,"updateSize mColumns: " + mColumns + " mRows: " + mRows);
         mTermSession.updateSize(mColumns, mRows);
 
         // Reset our paging:

@@ -18,6 +18,7 @@ package com.example.myterminalemulator;
 
 import android.content.Context;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import com.example.myterminalemulator.emulatorview.ColorScheme;
 import com.example.myterminalemulator.emulatorview.EmulatorView;
@@ -33,6 +34,7 @@ public class TermView extends EmulatorView {
     public void updatePrefs(TermSettings settings, ColorScheme scheme) {
         if (scheme == null) {
             scheme = new ColorScheme(settings.getColorScheme());
+            Log.d("TermView", "settings.getColorScheme: " + settings.getColorScheme()[0]);
         }
 
         setTextSize(settings.getFontSize());
